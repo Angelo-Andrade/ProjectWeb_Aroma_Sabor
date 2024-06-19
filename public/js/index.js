@@ -26,20 +26,112 @@ if (document.readyState === "loading") {
 }
 
 function ready() {
-    getProducts().then((allProducts) => {
-        updateProducts(allProducts);
-    }).catch((error) => {
-        console.error(error);
-    }); 
-    addEventListeners();
+    let emailInput = document.getElementById('emailInput');
+    let passwordInput = document.getElementById('passwordInput');
+    let displayName = document.getElementById('displayName');
+    
+    let authEmailPassButton = document.getElementById('authEmailPassButton');
+    if (authEmailPassButton) {
+        authEmailPassButton.addEventListener('click', function () {
+            let emailInput = document.getElementById('emailInput');
+            let passwordInput = document.getElementById('passwordInput');
+            let displayName = document.getElementById('displayName');
+
+            firebase.auth().signInWithEmailAndPassword(emailInput.value, passwordInput.value)
+                .then(function (result) {
+                    console.log(result);
+                    displayName.innerText = 'Bem vindo, ' + emailInput.value;
+                    alert('Autenticado ' + emailInput.value);
+                    
+                    window.location.href = 'index.html';
+                    getProducts()
+                    .then((allProducts) => {
+                        updateProducts(allProducts);
+                    })
+                    .catch((error) => {
+                        console.error('Erro ao carregar produtos:', error);
+                    }); 
+                    addEventListeners();            
+                })
+                .catch(function (error) {
+                    console.error(error.code);
+                    console.error(error.message);
+                    alert(error.message);
+                });
+        });
+    }
+
+    
+    // Providers
+    let authGoogleButton = document.getElementById('authGoogleButton');
+    if (authGoogleButton) {
+        authGoogleButton.addEventListener('click', function () {
+            let provider = new firebase.auth.GoogleAuthProvider();
+            firebase
+             .auth()
+             .signInWithPopup(provider)
+             .then(function (result) {
+                    console.log(result);
+                    let token = result.credential.accessToken;
+                    displayName.innerText = 'Bem vindo, ' + result.user.displayName;
+                    window.location.href = 'index.html';
+                    getProducts()
+                    .then((allProducts) => {
+                        updateProducts(allProducts);
+                    })
+                    .catch((error) => {
+                        console.error('Erro ao carregar produtos:', error);
+                    }); 
+                    addEventListeners();
+                }).catch(function (error) {
+                    console.log(error);
+                    alert('Falha na autenticação');
+                });
+        });
+    }
+    
+    let createUserButton = document.getElementById('createUserButton');
+    if(createUserButton) {
+
+        createUserButton.addEventListener('click', function () {
+            firebase
+                .auth()
+                .createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
+                .then(function () {
+                    alert('Bem vindo ' + emailInput.value);
+                })
+                .catch(function (error) {
+                    console.error(error.code);
+                    console.error(error.message);
+                    alert('Falha ao cadastrar, verifique o erro no console.')
+                });
+        });
+    }
+    
+    let logOutButton = document.getElementById('logOutButton');
+    if(logOutButton) {
+        logOutButton.addEventListener('click', function () {
+            firebase
+                .auth()
+                .signOut()
+                .then(function () {
+                    displayName.innerText = 'Você não está autenticado';
+                    alert('Você se deslogou');
+                }, function (error) {
+                    console.error(error);
+                });
+        });
+    }
     
     //eventos
     const addItemButton = document.getElementById("add-item");
-    addItemButton.addEventListener("click", () => {
-        const addProductSection = document.querySelector(".add-product-section");
-        addProductSection.style.display = "block";
-        addProductSection.scrollIntoView({ behavior: 'smooth' }); 
-    });
+    if(addItemButton) {
+        addItemButton.addEventListener("click", () => {
+            const addProductSection = document.querySelector(".add-product-section");
+            addProductSection.style.display = "block";
+            addProductSection.scrollIntoView({ behavior: 'smooth' }); 
+        });
+    }
 
     const removeItem = document.querySelector(".close-button");
     if (removeItem) {
@@ -77,44 +169,47 @@ function ready() {
     });    
 
     const addProductForm = document.getElementById("add-product-form");
-    addProductForm.addEventListener("submit", function(event) {
-        event.preventDefault();
-        try {
-            const productName = document.getElementById("product-name").value;
-            const productDescription = document.getElementById("product-description").value;
-            const productPrice = document.getElementById("product-price").value;
-            const productImage = document.getElementById("product-image").files[0];
+    if(addProductForm) {
 
-            if (productImage) {
-                const reader = new FileReader();
-
-                reader.onload = function(event) {
-                    const base64Image = event.target.result;
-
-                    const newItem = createProductItem(productName, productDescription, productPrice, base64Image);
-                    const gallerySection = document.querySelector(".gallery");
-
-                    if (newItem) {
-                        gallerySection.appendChild(newItem);
-                        document.getElementById("add-product-form").reset();
-                        gallerySection.scrollIntoView({ behavior: 'smooth' });
-                        addEventListenersToNewElements(newItem);
-                    } else {
-                        console.error('O novo item não pôde ser criado.');
-                    }
-
-                    document.querySelector(".add-product-section").style.display = "none";
-                    insertProducts(productName, productDescription, productPrice, base64Image);
-                };
-
-                reader.readAsDataURL(productImage);
-            } else {
-                console.log('Nenhum arquivo de imagem selecionado.');
+        addProductForm.addEventListener("submit", function(event) {
+            event.preventDefault();
+            try {
+                const productName = document.getElementById("product-name").value;
+                const productDescription = document.getElementById("product-description").value;
+                const productPrice = document.getElementById("product-price").value;
+                const productImage = document.getElementById("product-image").files[0];
+    
+                if (productImage) {
+                    const reader = new FileReader();
+    
+                    reader.onload = function(event) {
+                        const base64Image = event.target.result;
+    
+                        const newItem = createProductItem(productName, productDescription, productPrice, base64Image);
+                        const gallerySection = document.querySelector(".gallery");
+    
+                        if (newItem) {
+                            gallerySection.appendChild(newItem);
+                            document.getElementById("add-product-form").reset();
+                            gallerySection.scrollIntoView({ behavior: 'smooth' });
+                            addEventListenersToNewElements(newItem);
+                        } else {
+                            console.error('O novo item não pôde ser criado.');
+                        }
+    
+                        document.querySelector(".add-product-section").style.display = "none";
+                        insertProducts(productName, productDescription, productPrice, base64Image);
+                    };
+    
+                    reader.readAsDataURL(productImage);
+                } else {
+                    console.log('Nenhum arquivo de imagem selecionado.');
+                }
+            } catch (err) {
+                console.error(err);
             }
-        } catch (err) {
-            console.error(err);
-        }
-    });
+        });
+    }
 
     const editProductButton = document.querySelector("#edit-product-form");
     if(editProductButton) {
@@ -200,7 +295,7 @@ function ready() {
             }
         });
     }
-
+    
     const restoreButton = document.querySelector('#products-restore');
     if (restoreButton) {
         restoreButton.addEventListener('click', () => {
@@ -213,6 +308,19 @@ function ready() {
                 console.error(error);
             }); 
             addEventListeners();
+        });
+    }
+    
+    const messageForm = document.querySelector('#contact-form');
+    if (messageForm) {
+        messageForm.addEventListener('submit', (e) => {
+            e.target.preventDefault();
+            const name = document.querySelector('#contact-name');
+            const email = document.querySelector('#contact-email');
+            const message = document.querySelector('#contact-message');
+            if (name && email && message) {
+                sendMessage(name, email, message);
+            }
         });
     }
 }
@@ -490,7 +598,6 @@ function finalisePurchase () {
 
 
 // novos metodos
-
 function getProducts() {
     const dbref = ref(db);
     return new Promise((resolve, reject) => {
@@ -729,4 +836,17 @@ function editProduct(oldName, newName, description, price, image) {
                 reject(error);
             });
     });
+}
+
+function sendMessage (inputEmail, inputMensagem, inputNome) {
+    const dbref = ref(db);
+    set(child(dbref, 'mensagens'), {
+        email: inputEmail,
+        mensagem: inputMensagem,
+        nome: inputNome
+    }).then(() => {
+        console.log("Mensagem enviada com sucesso");
+    }).catch((error) => {
+        console.log("Erro de envio", error);
+    });    
 }

@@ -20,7 +20,6 @@ body {
   color: #fff;
   min-height: 1000px;
   height: fit-content;
-  align-content: center;
 }
 
 header {
@@ -331,7 +330,7 @@ button:active {
 
 .add-product-section, .edit-product-section {
   display: none;
-  color: #e0d8d8;
+  color: #fff;
   width: 80%;
   margin: auto auto 150px auto;
   padding: 20px;
@@ -344,6 +343,7 @@ button:active {
 }
 
 .search {
+  min-width: fit-content;
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -376,4 +376,101 @@ button:active {
   padding: 10px;
   border-radius: 5px;
   border: 1px solid var(--secondaryColor);
+}
+
+.contact-section {
+  display: grid;
+  width: 80%;
+  margin: 50px auto;
+  padding: 20px;
+  border-radius: 25px;
+  background-color: #320000b4;  
+  color: #fff;
+}
+
+.contact-section label {
+  margin: 5px 0;
+}
+
+#contact-form {
+  display: grid;
+  grid-gap: 15px;
+}
+
+#contact-name, #contact-email, #contact-message {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--secondaryColor);
+  background-color: #e0d8d8;
+  color: var(--secondaryColor);
+}
+
+#submit-contact-form {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  background-color: var(--primaryColor);
+  color: #fff;
+  cursor: pointer;
+}
+
+#submit-contact-form:hover {
+  background-color: #692d18;
+}
+
+#submit-contact-form:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--quaternaryColor);
+}
+
+#submit-contact-form:active {
+  background-color: var(--secondaryColor);
+  transition: 50ms all;
+  transform: scale(0.95);
+}
+
+.service-footer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.service-link {
+  margin: auto;
+  background-color: var(--secondaryColor);
+  padding: 15px;
+  color: #fff;
+  border-radius: 10px;
+}
+
+.menu-link {
+  color: #fff;
+}
+
+.col-md-4 {
+  margin: 0 auto;
+  background-color: var(--secondaryColor);
+  padding: 40px;
+  border-radius: 20px;
+  max-width: 35%;
+  min-width: fit-content;
+}
+
+.d-grid {
+  display: flex;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 0;
+}
+
+.d-grid button {
+  margin: 1px;
+}
+
+form {
+  margin-bottom: 30px;
+}
+
+.form-group {
+  margin-bottom: 5px
 }
