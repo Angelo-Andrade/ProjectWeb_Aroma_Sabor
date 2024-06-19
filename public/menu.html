@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Café Aroma & Sabor</title>
+    <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+    <header>
+      <h1 class="titulo">Café Aroma & Sabor</h1>
+    </header>
+    <div class="search">
+      <select id="search-selector">
+        <option value="default">Tipo de pesquisa:</option>
+        <option value="name">Nome</option>
+        <option value="price">Preço</option>
+        <option value="description">Descrição</option>
+      </select>
+      <input type="text" id="search-bar" placeholder="O que deseja pesquisar?">
+      <button id="search-button">Pesquisar</button>
+      <button id="products-restore">Recarregar produtos</button>
+    </div>
+    <section>
+      <section class="gallery">
+      </section>
+      <button id="add-item" type="submit">
+        <svg xmlns="http://www.w3.org/2000/svg" class="bibi-plus-square" viewBox="0 0 16 16">
+          <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+          <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+        </svg>
+      </button>
+    </section>
+
+    <section class="cart-section">
+      <table class="cart-table">
+        <thead>
+          <tr>
+            <th class="table-head Item">Item</th>
+            <th class="table-head Preço">Preço</th>
+            <th class="table-head Quantidade">Quantidade</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+         <!--<tr class="cart-product">
+            <td class="product-identification">
+              <strong class="cart-product-title">Café</strong>
+            </td>
+            <td>
+              <span class="cart-product-price">R$5,00</span>
+            </td>
+            <td>
+              <input class="product-qtd-input" type="number" value="1" min="0">
+              <button class="remove-product-button" type="button">Remover</button>
+            </td>
+          </tr>
+          <tr class="cart-product">
+            <td class="product-identification"> 
+              <strong class="cart-product-title">Bolo</strong>
+            </td>
+            <td>
+              <span class="cart-product-price">R$15,00</span>
+            </td>
+            <td>
+              <input class="product-qtd-input" type="number" value="2" min="0">
+              <button class="remove-product-button" type="button">Remover</button>
+            </td>
+          </tr> -->
+        </tbody>
+  
+        <tfoot>
+          <tr>
+            <td colspan="3" class="cart-total-container">
+              <strong>Total:</strong>
+              <span>R$0,00</span>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+  
+      <div>
+        <button class="purchase-button" type="button">Finalizar Compra</button>  
+      </div>
+    </section>
+    
+    <section class="add-product-section">
+      <h2>Adicionar Novo Produto</h2>
+      <form id="add-product-form">
+          <label for="product-name">Nome do Produto:</label>
+          <input type="text" id="product-name" required>
+          <label for="product-description">Descrição:</label>
+          <input type="text" id="product-description" required>
+          <label for="product-price">Preço:</label>
+          <input type="number" id="product-price" min="0" step="0.01" required>
+          <label for="product-image">Imagem (opcional):</label>
+          <input type="file" id="product-image">
+          <button type="submit" id="add-product-form">Adicionar</button>
+          <button type="button" id="cancel-product-form">Cancelar</button>
+      </form>
+    </section>
+    
+    <section class="edit-product-section">
+      <h2 class="old-name">Editar Produto</h2>
+      <form id="edit-product-form">
+          <label for="product-name">Nome do Produto:</label>
+          <input type="text" id="product-name" required>
+          <label for="product-description">Descrição:</label>
+          <input type="text" id="product-description" required>
+          <label for="product-price">Preço:</label>
+          <input type="number" id="product-price" min="0" step="0.01" required>
+          <label for="product-image">Imagem:</label>
+          <input type="file" id="product-image">
+          <button type="submit" id="edit-product-form">Editar</button>
+          <button type="button" id="cancel-product-form">Cancelar</button>
+      </form>
+    </section>
+    <footer class="service-footer">
+      <a class="service-link" href="./service.html">Fale Conosco</a>
+    </footer>
+    <script type="module" src="./js/index.js"></script>
+</body>
+</html>
