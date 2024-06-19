@@ -1,0 +1,379 @@
+:root {
+  --primaryColor: #8a4932;
+  --secondaryColor: #320000;
+  --ternaryColor: #8e563d;
+  --quaternaryColor: #692d18;
+}
+
+::after {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-image: url(../img/back-coffee.jpg);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  font-family: "Montserrat", sans-serif;
+  color: #fff;
+  min-height: 1000px;
+  height: fit-content;
+  align-content: center;
+}
+
+header {
+  margin-bottom: 20px;
+}
+
+section {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: space-around;
+}
+
+.titulo {
+  text-align: center;
+  margin: auto;
+  padding: 20px;
+  background: linear-gradient(#320000, #692d18);
+  border-radius: 15px;
+  height: 100%;
+  min-width: fit-content;
+}
+
+.gallery {
+  width: 95%;
+  display: grid;
+  margin: auto;
+  align-items: center;
+  justify-content: space-around;
+  height: fit-content;
+}
+
+.gallery > div, button {
+  margin: auto;
+  margin-top: 10px;
+  margin-bottom: 35px;
+  background-color: var(--ternaryColor);
+  border: var(--secondaryColor) solid 1px;
+  border-radius: 5px;
+  width: fit-content;
+  height: fit-content;
+  padding: 10px;
+}
+
+.item > img {
+  margin: 0;
+  padding: 0;
+  width: fit-content;
+  height: fit-content;
+  border-radius: 5px;
+  min-width: 28vw;
+  min-height: 28vw;
+  max-width: 32vw;
+  max-height: 32vw;
+}
+
+#add-item {
+  margin: auto;
+  padding: 20px;
+  border-radius: 30px;
+  width: fit-content;
+  height: fit-content;
+  align-items: center;
+  text-align: center;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+button:hover {
+  background-color: #692d18; /* Altere para a cor desejada ao passar o mouse */
+}
+
+button:focus {
+  outline: none; /* Remova o contorno padrão do foco */
+  box-shadow: 0 0 0 2px var(--quaternaryColor); /* Adicione um contorno ao focar */
+}
+
+button:active {
+  background-color: var(--secondaryColor);
+  border-radius: 35px;
+  transition: 50ms all;
+  transform: scale(0.95); /* Reduza ligeiramente o tamanho ao clicar */
+}
+
+.bibi-plus-square {
+  fill: #fff;
+  width: 35px;
+  height: 35px;
+  margin: 0;
+}
+
+.item {
+  transition: transform 0.3s ease;
+}
+
+.item:hover {
+  transform: scale(1.1);
+}
+
+.product-info {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  width: 150px;
+  padding: 10px;
+  background-color: var(--secondaryColor);
+  color: #fff;
+}
+
+.item:hover .product-info {
+  display: block;
+}
+
+.product-actions {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.add-to-cart-btn,
+.remove-product-btn,
+.edit-button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  color: #fff;
+  background-color: var(--primaryColor);
+  cursor: pointer;
+}
+
+/* mobile (tela menor ou igual a 414x780) */
+@media (max-width: 426px) { 
+  .gallery {
+    margin-top: 3rem;
+    margin-bottom: 5px;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* intermediários (tamanho entre 415x781 e 1279x719) */
+@media (min-width: 427px) and (max-width: 1279px) {
+  body {
+    height: fit-content;
+    min-height: 1300px;
+  }
+  
+  .gallery {
+    width: 90%;
+    height: fit-content;
+    margin-top: 3rem;
+    margin-bottom: 3rem;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .item > img {
+    min-width: 21vw;
+    min-height: 21vw;
+    max-width: 25vw;
+    max-height: 25vw;
+  }
+
+  .bibi-plus-square{
+    width: 70px;
+    height: 70px;
+    padding: 20px
+  }
+}
+
+/* grandes (tamanho maior ou igual a 1280x720) */
+@media (min-width: 1280px) {
+  .gallery {
+    width: 85%;
+    margin-top: 4rem;
+    margin-bottom: 3rem;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .item > img {
+    min-width: 18vw;
+    min-height: 18vw;
+    max-width: 21vw;
+    max-height: 21vw;
+  }
+
+  .floating-btn {
+    margin-right: 30px;
+  }
+  
+  .bibi-plus-square{
+    width: 70px;
+    height: 70px;
+    padding: 20px
+  }
+}
+
+.cart-section {
+  margin: 100px auto;
+  width: 80%;
+  justify-items: center;
+  background-color: #320000b4;  
+  border-radius: 25px;
+  padding: 20px;
+}
+
+.cart-table {
+  margin: auto;
+  width: 100%;
+  border-collapse: collapse;
+  padding: 20px;
+}
+
+.table-head{
+  border-bottom: 1px solid #e0d8d8;
+  padding-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.Preço,
+.Quantidade{
+  width: 26%;
+}
+
+.cart-product td{
+  padding: 8px 0;
+}
+
+.product-identification{
+  display: flex;
+  align-items: center;
+}
+
+.cart-product-title{
+  margin-left: 16px;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.cart-product-price{
+  font-family: "Relaway", sans-serif;
+  margin-left: 70px;
+}
+
+.product-qtd-input{
+  width: 48px;
+  height: 34px;
+  border-radius: 6px;
+  border: 2px solid var(--primaryColor);
+  text-align: center;
+  background-color: #e0d8d8;
+  margin-left: 55px;
+}
+
+.remove-product-button{
+  margin-left: 1px;
+  background-color: #660404;
+  color: #fff;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 6px;
+  margin-bottom: 16px;
+
+  transition: 0.2s;
+}
+
+.remove-product-button:hover{
+  filter: brightness(0.8);
+}
+
+.cart-total-container{
+  border-top: 1px solid #959595;
+  text-align: end;
+  padding: 20px 20px 20px 20px;
+  font-size: 18px;
+}
+
+.cart-total-container strong{
+  margin-right: 12px;
+}
+
+.purchase-button{
+  display: flex;
+  margin: 24px auto 0;
+  background-color: var(--secondaryColor);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 16px 20px;
+  text-transform: uppercase;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.purchase-button:hover{
+  filter: brightness(0.8);
+}
+
+.close-button {
+  margin-bottom: 5px;
+  justify-items: center;
+}
+
+.bi-x-square {
+  margin: auto;
+  padding: 0;
+  fill: #e0d8d8;
+  height: 16px;
+}
+
+.add-product-section, .edit-product-section {
+  display: none;
+  color: #e0d8d8;
+  width: 80%;
+  margin: auto auto 150px auto;
+  padding: 20px;
+  border-radius: 25px;
+  background-color: #320000b4;  
+}
+
+.add-product-section label, .edit-product-section label {
+  margin: 5px;
+}
+
+.search {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 75%;
+  margin: 20px auto;
+  padding: 10px;
+  background-color: var(--quaternaryColor);
+  border-radius: 15px;
+}
+
+#search-bar {
+  width: 60%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--secondaryColor);
+}
+
+#search-button, #products-restore {
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  background-color: var(--primaryColor);
+  color: #fff;
+  cursor: pointer;
+  margin: 15px 5px;
+}
+
+#search-selector {
+  width: 25%;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid var(--secondaryColor);
+}
