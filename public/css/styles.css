@@ -474,3 +474,7 @@ form {
 .form-group {
   margin-bottom: 5px
 }
+
+button {
+  color: #fff;
+}

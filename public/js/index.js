@@ -19,13 +19,113 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase();
 
-if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", ready);
-} else {
-    ready();
+document.addEventListener("DOMContentLoaded", async function() {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ready);
+    } else {
+        console.log('ok');
+        let authentication = await login();
+        console.log(authentication);
+
+        if (authentication) {
+            console.log('ok');
+            window.location.href = 'menu.html';
+            ready(authentication);
+        }
+    }
+});
+
+async function login() {
+    let emailInput = document.getElementById('emailInput');
+    let passwordInput = document.getElementById('passwordInput');
+    let displayName = document.getElementById('displayName');
+    
+    return new Promise((resolve) => {
+        let authEmailPassButton = document.getElementById('authEmailPassButton');
+        if (authEmailPassButton) {
+            authEmailPassButton.addEventListener('click', function () {
+                firebase.auth().signInWithEmailAndPassword(emailInput.value, passwordInput.value)
+                    .then(function (result) {
+                        console.log(result);
+                        displayName.innerText = 'Bem vindo, ' + emailInput.value;
+                        alert('Autenticado ' + emailInput.value);
+                        sessionStorage.setItem('nameSession', emailInput.value);
+                        resolve(true);
+                    })
+                    .catch(function (error) {
+                        console.error(error.code);
+                        console.error(error.message);
+                        alert(error.message);
+                        sessionStorage.setItem('nameSession', undefined);
+                        resolve(false);
+                    });
+            });
+        }
+
+        // Providers
+        let authGoogleButton = document.getElementById('authGoogleButton');
+        if (authGoogleButton) {
+            authGoogleButton.addEventListener('click', function () {
+                let provider = new firebase.auth.GoogleAuthProvider();
+                firebase
+                    .auth()
+                    .signInWithPopup(provider)
+                    .then(function (result) {
+                        console.log(result);
+                        let token = result.credential.accessToken;
+                        displayName.innerText = 'Bem vindo, ' + result.user.displayName;
+                        sessionStorage.setItem('nameSession', result.user.displayName);
+                        resolve(true);
+                    }).catch(function (error) {
+                        console.log(error);
+                        alert('Falha na autenticação');
+                        sessionStorage.setItem('nameSession', undefined);
+                        resolve(false);
+                    });
+            });
+        }
+
+        let createUserButton = document.getElementById('createUserButton');
+        if(createUserButton) {
+            createUserButton.addEventListener('click', function () {
+                firebase.auth()
+                    .createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
+                    .then(function () {
+                        alert(`Usuário ${emailInput.value} cadastrado com sucesso!`);
+                        sessionStorage.setItem('nameSession', undefined);
+                        resolve(false);
+                    })
+                    .catch(function (error) {
+                        console.error(error.code);
+                        console.error(error.message);
+                        alert('Falha ao cadastrar!');
+                        sessionStorage.setItem('nameSession', undefined);
+                        resolve(false);
+                    });
+            });
+        }
+
+        let logOutButton = document.getElementById('logOutButton');
+        if(logOutButton) {
+            logOutButton.addEventListener('click', function () {
+                firebase.auth().signOut()
+                    .then(function () {
+                        displayName.innerText = 'Você não está autenticado';
+                        alert('Você se deslogou');
+                        sessionStorage.setItem('nameSession', undefined);
+                        window.location.href = 'index.html';
+                        resolve(false);
+                    }, function (error) {
+                        console.error(error);
+                        sessionStorage.setItem('nameSession', undefined);
+                        resolve(false);
+                    });
+            });
+        }
+    });
 }
 
-function ready() {
+function ready(authentication) {
     getProducts()
     .then((allProducts) => {
         updateProducts(allProducts);
@@ -36,143 +136,168 @@ function ready() {
     addEventListeners();
     
     //eventos
-    const addItemButton = document.getElementById("add-item");
-    if(addItemButton) {
-        addItemButton.addEventListener("click", () => {
-            const addProductSection = document.querySelector(".add-product-section");
-            addProductSection.style.display = "block";
-            addProductSection.scrollIntoView({ behavior: 'smooth' }); 
-        });
-    }
+    if (authentication) {
+        const addItemButton = document.getElementById("add-item");
+        if(addItemButton) {
+            addItemButton.addEventListener("click", () => {
+                const addProductSection = document.querySelector(".add-product-section");
+                addProductSection.style.display = "block";
+                addProductSection.scrollIntoView({ behavior: 'smooth' }); 
+            });
+        }
 
-    const removeItem = document.querySelector(".close-button");
-    if (removeItem) {
-        removeItem.addEventListener("click", (event) => {
-            if(confirm("Realmente deseja apagar o produto?")) {
+        const removeItem = document.querySelector(".close-button");
+        if (removeItem) {
+            removeItem.addEventListener("click", (event) => {
+                if(confirm("Realmente deseja apagar o produto?")) {
+    
+                    try {
+                        const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
+                        if (productTitle) {
+                            deleteProduct(productTitle);
+                            removeItem.parentElement.parentElement.remove();
+                        }
+                    } catch (err) {
+                        alert("Não foi possível apagar o produto!");
+                        console.error(err);
+                    }
+                }
+            });
+        }
+        
+        const cancelButtons = document.querySelectorAll("#cancel-product-form");
+        cancelButtons.forEach(cancelButton => {
+            cancelButton.addEventListener("click", () => {
+                const oldNameElement = document.querySelector('.old-name');
+                let content = oldNameElement.textContent.split(' ');
+                content.pop();
+                content = content.join(' ');
+                content = content.replace(',',' ');
+                oldNameElement.textContent = content;
+                const gallerySection = document.querySelector(".gallery");
+                gallerySection.scrollIntoView({ behavior: 'smooth' });
+                document.querySelector(".add-product-section").style.display = "none";
+                document.querySelector(".edit-product-section").style.display = "none";
+            });
+        });    
 
+        const addProductForm = document.getElementById("add-product-form");
+        if(addProductForm) {
+    
+            addProductForm.addEventListener("submit", function(event) {
+                event.preventDefault();
                 try {
-                    const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
-                    if (productTitle) {
-                        deleteProduct(productTitle);
-                        removeItem.parentElement.parentElement.remove();
+                    const productName = document.getElementById("product-name").value;
+                    const productDescription = document.getElementById("product-description").value;
+                    const productPrice = document.getElementById("product-price").value;
+                    const productImage = document.getElementById("product-image").files[0];
+        
+                    if (productImage) {
+                        const reader = new FileReader();
+        
+                        reader.onload = function(event) {
+                            const base64Image = event.target.result;
+        
+                            const newItem = createProductItem(productName, productDescription, productPrice, base64Image);
+                            const gallerySection = document.querySelector(".gallery");
+        
+                            if (newItem) {
+                                gallerySection.appendChild(newItem);
+                                document.getElementById("add-product-form").reset();
+                                gallerySection.scrollIntoView({ behavior: 'smooth' });
+                                addEventListenersToNewElements(newItem);
+                            } else {
+                                console.error('O novo item não pôde ser criado.');
+                            }
+        
+                            document.querySelector(".add-product-section").style.display = "none";
+                            insertProducts(productName, productDescription, productPrice, base64Image);
+                        };
+        
+                        reader.readAsDataURL(productImage);
+                    } else {
+                        console.log('Nenhum arquivo de imagem selecionado.');
                     }
                 } catch (err) {
-                    alert("Não foi possível apagar o produto!");
                     console.error(err);
                 }
-            }
-        });
-    }
-    
-    const cancelButtons = document.querySelectorAll("#cancel-product-form");
-    cancelButtons.forEach(cancelButton => {
-        cancelButton.addEventListener("click", () => {
-            const oldNameElement = document.querySelector('.old-name');
-            let content = oldNameElement.textContent.split(' ');
-            content.pop();
-            content = content.join(' ');
-            content = content.replace(',',' ');
-            oldNameElement.textContent = content;
-            const gallerySection = document.querySelector(".gallery");
-            gallerySection.scrollIntoView({ behavior: 'smooth' });
-            document.querySelector(".add-product-section").style.display = "none";
-            document.querySelector(".edit-product-section").style.display = "none";
-        });
-    });    
+            });
+        }
 
-    const addProductForm = document.getElementById("add-product-form");
-    if(addProductForm) {
+        
+        let logOutButton = document.getElementById('logOutButton');
+        if(logOutButton) {
+            logOutButton.addEventListener('click', function () {
+                firebase.auth().signOut()
+                    .then(function () {
+                        displayName.innerText = 'Você não está autenticado';
+                        alert('Você se deslogou');
+                        sessionStorage.setItem('nameSession', undefined);
+                        window.location.href = 'index.html';
+                        resolve(false);
+                    }, function (error) {
+                        console.error(error);
+                        sessionStorage.setItem('nameSession', undefined);
+                        resolve(false);
+                    });
+            });
+        }
 
-        addProductForm.addEventListener("submit", function(event) {
-            event.preventDefault();
-            try {
-                const productName = document.getElementById("product-name").value;
-                const productDescription = document.getElementById("product-description").value;
-                const productPrice = document.getElementById("product-price").value;
-                const productImage = document.getElementById("product-image").files[0];
+        const editProductButton = document.querySelector("#edit-product-form");
+        if(editProductButton) {
+            editProductButton.addEventListener("submit", function (event) {
+                event.preventDefault();
+                try {
+                    const oldNameElement = document.querySelector('.old-name');
+                    let oldName;
+                    let content;
+                    if (oldNameElement) {
+                        content = oldNameElement.textContent.split(' ');
+                        oldName = content.pop();
+                        content = content.join(' ');
+                        content = content.replace(',',' ');
+                    }
+                    const newName = editProductButton.querySelector('#product-name').value;
+                    const description = editProductButton.querySelector('#product-description').value;
+                    const price = editProductButton.querySelector('#product-price').value;
+                    const productImage = document.querySelectorAll("#product-image")[1].files[0];
     
-                if (productImage) {
-                    const reader = new FileReader();
+                    if (productImage) {
+                        const reader = new FileReader();
+        
+                        reader.onload = function(event) {
+                            const base64Image = event.target.result;
+                            const gallerySection = document.querySelector(".gallery");
+                            document.querySelector(".edit-product-section").style.display = "none";
+                            while (document.querySelector(".gallery").firstChild) {
+                                document.querySelector(".gallery").removeChild(document.querySelector(".gallery").firstChild);
+                            }
+                            editProduct(oldName, newName, description, price, base64Image).then(() =>{
+                                getProducts().then((allProducts) => {
+                                    updateProducts(allProducts);
+                                    gallerySection.scrollIntoView({ behavior: 'smooth' });
+                                    oldNameElement.textContent = content;
+                                }).catch((error) => {
+                                    console.error(error);
+                                }); 
+                                addEventListeners();
     
-                    reader.onload = function(event) {
-                        const base64Image = event.target.result;
-    
-                        const newItem = createProductItem(productName, productDescription, productPrice, base64Image);
-                        const gallerySection = document.querySelector(".gallery");
-    
-                        if (newItem) {
-                            gallerySection.appendChild(newItem);
-                            document.getElementById("add-product-form").reset();
-                            gallerySection.scrollIntoView({ behavior: 'smooth' });
-                            addEventListenersToNewElements(newItem);
-                        } else {
-                            console.error('O novo item não pôde ser criado.');
-                        }
-    
-                        document.querySelector(".add-product-section").style.display = "none";
-                        insertProducts(productName, productDescription, productPrice, base64Image);
-                    };
-    
-                    reader.readAsDataURL(productImage);
-                } else {
-                    console.log('Nenhum arquivo de imagem selecionado.');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        });
-    }
-
-    const editProductButton = document.querySelector("#edit-product-form");
-    if(editProductButton) {
-        editProductButton.addEventListener("submit", function (event) {
-            event.preventDefault();
-            try {
-                const oldNameElement = document.querySelector('.old-name');
-                let oldName;
-                let content;
-                if (oldNameElement) {
-                    content = oldNameElement.textContent.split(' ');
-                    oldName = content.pop();
-                    content = content.join(' ');
-                    content = content.replace(',',' ');
-                }
-                const newName = editProductButton.querySelector('#product-name').value;
-                const description = editProductButton.querySelector('#product-description').value;
-                const price = editProductButton.querySelector('#product-price').value;
-                const productImage = document.querySelectorAll("#product-image")[1].files[0];
-
-                if (productImage) {
-                    const reader = new FileReader();
-    
-                    reader.onload = function(event) {
-                        const base64Image = event.target.result;
-                        const gallerySection = document.querySelector(".gallery");
-                        document.querySelector(".edit-product-section").style.display = "none";
-                        while (document.querySelector(".gallery").firstChild) {
-                            document.querySelector(".gallery").removeChild(document.querySelector(".gallery").firstChild);
-                        }
-                        editProduct(oldName, newName, description, price, base64Image).then(() =>{
-                            getProducts().then((allProducts) => {
-                                updateProducts(allProducts);
-                                gallerySection.scrollIntoView({ behavior: 'smooth' });
-                                oldNameElement.textContent = content;
                             }).catch((error) => {
                                 console.error(error);
-                            }); 
-                            addEventListeners();
-
-                        }).catch((error) => {
-                            console.error(error);
-                        });
-                    };
-    
-                    reader.readAsDataURL(productImage);
+                            });
+                        };
+        
+                        reader.readAsDataURL(productImage);
+                    }
+                } catch (err) {
+                    console.error(err);
                 }
-            } catch (err) {
-                console.error(err);
-            }
-        });
+            });
+        }
+        
+    }    
+    else {
+        document.addEventListener();
     }
 
     const getReceipt = document.querySelector(".purchase-button");
