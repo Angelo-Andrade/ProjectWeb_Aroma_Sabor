@@ -19,31 +19,52 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase();
 
-document.addEventListener("DOMContentLoaded", async function() {
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", ready);
-    } else {
-        console.log('ok');
-        let authentication = await login();
-        console.log(authentication);
+// window.addEventListener('load', function() {
+    
+// });
+// document.body.onload = addElement;
 
-        if (authentication) {
-            console.log('ok');
-            window.location.href = 'menu.html';
-            ready(authentication);
+document.addEventListener("DOMContentLoaded", async function() {
+    console.log('carregando js');
+
+    window.addEventListener('popstate', async function(event) {
+        console.log('teste');
+        if (location.pathname === '/public/menu.html') {
+            console.log('teste2');
+            gotoMenu();
+            ready();
+        } 
+        
+        if (location.pathname === '/public/index.html') {
+            console.log('teste3');
+            gotoLogin();
+            login();
         }
+    });
+
+    let authentication = await login();
+    console.log(authentication);
+    
+    if (authentication) {
+        console.log('carregando elementos menu...');
+        gotoMenu();
+        console.log('buscando produtos...');
+        ready(authentication);
     }
 });
 
 async function login() {
-    let emailInput = document.getElementById('emailInput');
-    let passwordInput = document.getElementById('passwordInput');
-    let displayName = document.getElementById('displayName');
-    
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const displayName = document.getElementById('displayName');
+    const formLogin = document.querySelector('.element-form');
+
     return new Promise((resolve) => {
         let authEmailPassButton = document.getElementById('authEmailPassButton');
         if (authEmailPassButton) {
-            authEmailPassButton.addEventListener('click', function () {
+            authEmailPassButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                displayName.innerText = 'Validando dados...';
                 firebase.auth().signInWithEmailAndPassword(emailInput.value, passwordInput.value)
                     .then(function (result) {
                         console.log(result);
@@ -65,7 +86,8 @@ async function login() {
         // Providers
         let authGoogleButton = document.getElementById('authGoogleButton');
         if (authGoogleButton) {
-            authGoogleButton.addEventListener('click', function () {
+            authGoogleButton.addEventListener('click', function (event) {
+                event.preventDefault();
                 let provider = new firebase.auth.GoogleAuthProvider();
                 firebase
                     .auth()
@@ -85,35 +107,16 @@ async function login() {
             });
         }
 
-        let createUserButton = document.getElementById('createUserButton');
-        if(createUserButton) {
-            createUserButton.addEventListener('click', function () {
-                firebase.auth()
-                    .createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
-                    .then(function () {
-                        alert(`Usuário ${emailInput.value} cadastrado com sucesso!`);
-                        sessionStorage.setItem('nameSession', undefined);
-                        resolve(false);
-                    })
-                    .catch(function (error) {
-                        console.error(error.code);
-                        console.error(error.message);
-                        alert('Falha ao cadastrar!');
-                        sessionStorage.setItem('nameSession', undefined);
-                        resolve(false);
-                    });
-            });
-        }
-
         let logOutButton = document.getElementById('logOutButton');
         if(logOutButton) {
-            logOutButton.addEventListener('click', function () {
+            logOutButton.addEventListener('click', function (event) {
+                event.preventDefault();
                 firebase.auth().signOut()
                     .then(function () {
                         displayName.innerText = 'Você não está autenticado';
                         alert('Você se deslogou');
                         sessionStorage.setItem('nameSession', undefined);
-                        window.location.href = 'index.html';
+                        gotoLogin();
                         resolve(false);
                     }, function (error) {
                         console.error(error);
@@ -128,176 +131,172 @@ async function login() {
 function ready(authentication) {
     getProducts()
     .then((allProducts) => {
-        updateProducts(allProducts);
+        return updateProducts(allProducts); // Retorna a promessa de updateProducts()
+    })
+    .then(() => {
+        setupEventListeners(); // Chama setupEventListeners() após updateProducts() ser concluído
     })
     .catch((error) => {
         console.error('Erro ao carregar produtos:', error);
     }); 
-    addEventListeners();
-    
-    //eventos
-    if (authentication) {
-        const addItemButton = document.getElementById("add-item");
-        if(addItemButton) {
-            addItemButton.addEventListener("click", () => {
-                const addProductSection = document.querySelector(".add-product-section");
-                addProductSection.style.display = "block";
-                addProductSection.scrollIntoView({ behavior: 'smooth' }); 
-            });
-        }
+}
 
-        const removeItem = document.querySelector(".close-button");
-        if (removeItem) {
-            removeItem.addEventListener("click", (event) => {
-                if(confirm("Realmente deseja apagar o produto?")) {
-    
-                    try {
-                        const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
-                        if (productTitle) {
-                            deleteProduct(productTitle);
-                            removeItem.parentElement.parentElement.remove();
-                        }
-                    } catch (err) {
-                        alert("Não foi possível apagar o produto!");
-                        console.error(err);
-                    }
-                }
-            });
-        }
-        
-        const cancelButtons = document.querySelectorAll("#cancel-product-form");
-        cancelButtons.forEach(cancelButton => {
-            cancelButton.addEventListener("click", () => {
-                const oldNameElement = document.querySelector('.old-name');
-                let content = oldNameElement.textContent.split(' ');
-                content.pop();
-                content = content.join(' ');
-                content = content.replace(',',' ');
-                oldNameElement.textContent = content;
-                const gallerySection = document.querySelector(".gallery");
-                gallerySection.scrollIntoView({ behavior: 'smooth' });
-                document.querySelector(".add-product-section").style.display = "none";
-                document.querySelector(".edit-product-section").style.display = "none";
-            });
-        });    
+//métodos
+function setupEventListeners() {
+    console.log('atribuindo eventos');
 
-        const addProductForm = document.getElementById("add-product-form");
-        if(addProductForm) {
-    
-            addProductForm.addEventListener("submit", function(event) {
-                event.preventDefault();
+    const addItemButton = document.getElementById("add-item");
+    if (addItemButton) {
+        addItemButton.addEventListener("click", () => {
+            const addProductSection = document.querySelector(".add-product-section");
+            addProductSection.style.display = "block";
+            addProductSection.scrollIntoView({ behavior: 'smooth' }); 
+        });
+    }
+
+    const removeItem = document.querySelector(".close-button");
+    if (removeItem) {
+        removeItem.addEventListener("click", (event) => {
+            if(confirm("Realmente deseja apagar o produto?")) {
                 try {
-                    const productName = document.getElementById("product-name").value;
-                    const productDescription = document.getElementById("product-description").value;
-                    const productPrice = document.getElementById("product-price").value;
-                    const productImage = document.getElementById("product-image").files[0];
-        
-                    if (productImage) {
-                        const reader = new FileReader();
-        
-                        reader.onload = function(event) {
-                            const base64Image = event.target.result;
-        
-                            const newItem = createProductItem(productName, productDescription, productPrice, base64Image);
-                            const gallerySection = document.querySelector(".gallery");
-        
-                            if (newItem) {
-                                gallerySection.appendChild(newItem);
-                                document.getElementById("add-product-form").reset();
-                                gallerySection.scrollIntoView({ behavior: 'smooth' });
-                                addEventListenersToNewElements(newItem);
-                            } else {
-                                console.error('O novo item não pôde ser criado.');
-                            }
-        
-                            document.querySelector(".add-product-section").style.display = "none";
-                            insertProducts(productName, productDescription, productPrice, base64Image);
-                        };
-        
-                        reader.readAsDataURL(productImage);
-                    } else {
-                        console.log('Nenhum arquivo de imagem selecionado.');
+                    const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
+                    if (productTitle) {
+                        deleteProduct(productTitle);
+                        removeItem.parentElement.parentElement.remove();
                     }
                 } catch (err) {
+                    alert("Não foi possível apagar o produto!");
                     console.error(err);
                 }
-            });
-        }
-
-        
-        let logOutButton = document.getElementById('logOutButton');
-        if(logOutButton) {
-            logOutButton.addEventListener('click', function () {
-                firebase.auth().signOut()
-                    .then(function () {
-                        displayName.innerText = 'Você não está autenticado';
-                        alert('Você se deslogou');
-                        sessionStorage.setItem('nameSession', undefined);
-                        window.location.href = 'index.html';
-                        resolve(false);
-                    }, function (error) {
-                        console.error(error);
-                        sessionStorage.setItem('nameSession', undefined);
-                        resolve(false);
-                    });
-            });
-        }
-
-        const editProductButton = document.querySelector("#edit-product-form");
-        if(editProductButton) {
-            editProductButton.addEventListener("submit", function (event) {
-                event.preventDefault();
-                try {
-                    const oldNameElement = document.querySelector('.old-name');
-                    let oldName;
-                    let content;
-                    if (oldNameElement) {
-                        content = oldNameElement.textContent.split(' ');
-                        oldName = content.pop();
-                        content = content.join(' ');
-                        content = content.replace(',',' ');
-                    }
-                    const newName = editProductButton.querySelector('#product-name').value;
-                    const description = editProductButton.querySelector('#product-description').value;
-                    const price = editProductButton.querySelector('#product-price').value;
-                    const productImage = document.querySelectorAll("#product-image")[1].files[0];
+            }
+        });
+    }
     
-                    if (productImage) {
-                        const reader = new FileReader();
-        
-                        reader.onload = function(event) {
-                            const base64Image = event.target.result;
-                            const gallerySection = document.querySelector(".gallery");
-                            document.querySelector(".edit-product-section").style.display = "none";
-                            while (document.querySelector(".gallery").firstChild) {
-                                document.querySelector(".gallery").removeChild(document.querySelector(".gallery").firstChild);
-                            }
-                            editProduct(oldName, newName, description, price, base64Image).then(() =>{
-                                getProducts().then((allProducts) => {
-                                    updateProducts(allProducts);
-                                    gallerySection.scrollIntoView({ behavior: 'smooth' });
-                                    oldNameElement.textContent = content;
-                                }).catch((error) => {
-                                    console.error(error);
-                                }); 
-                                addEventListeners();
-    
+    const cancelButtons = document.querySelectorAll("#cancel-product-form");
+    cancelButtons.forEach(cancelButton => {
+        cancelButton.addEventListener("click", () => {
+            const oldNameElement = document.querySelector('.old-name');
+            let content = oldNameElement.textContent.split(' ');
+            content.pop();
+            content = content.join(' ');
+            content = content.replace(',',' ');
+            oldNameElement.textContent = content;
+            const gallerySection = document.querySelector(".gallery");
+            gallerySection.scrollIntoView({ behavior: 'smooth' });
+            document.querySelector(".add-product-section").style.display = "none";
+            document.querySelector(".edit-product-section").style.display = "none";
+        });
+    });    
+
+    const addProductForm = document.getElementById("add-product-form");
+    if (addProductForm) {
+        addProductForm.addEventListener("submit", function(event) {
+            event.preventDefault();
+            try {
+                const productName = document.getElementById("product-name").value;
+                const productDescription = document.getElementById("product-description").value;
+                const productPrice = document.getElementById("product-price").value;
+                const productImage = document.getElementById("product-image").files[0];
+
+                if (productImage) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        const base64Image = event.target.result;
+
+                        const newItem = createProductItem(productName, productDescription, productPrice, base64Image);
+                        const gallerySection = document.querySelector(".gallery");
+
+                        if (newItem) {
+                            gallerySection.appendChild(newItem);
+                            document.getElementById("add-product-form").reset();
+                            gallerySection.scrollIntoView({ behavior: 'smooth' });
+                            addEventListenersToNewElements(newItem);
+                        } else {
+                            console.error('O novo item não pôde ser criado.');
+                        }
+
+                        document.querySelector(".add-product-section").style.display = "none";
+                        insertProducts(productName, productDescription, productPrice, base64Image);
+                    };
+
+                    reader.readAsDataURL(productImage);
+                } else {
+                    console.log('Nenhum arquivo de imagem selecionado.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    }
+
+    const logOutButton = document.getElementById('logOutButton');
+    if (logOutButton) {
+        logOutButton.addEventListener('click', function () {
+            firebase.auth().signOut()
+                .then(function () {
+                    alert('Você se deslogou');
+                    sessionStorage.setItem('nameSession', undefined);
+                    gotoLogin();
+                    resolve(false);
+                }, function (error) {
+                    console.error(error);
+                    sessionStorage.setItem('nameSession', undefined);
+                    resolve(false);
+                });
+        });
+    }
+
+    const editProductButton = document.querySelector("#edit-product-form");
+    if (editProductButton) {
+        editProductButton.addEventListener("submit", function (event) {
+            event.preventDefault();
+            try {
+                const oldNameElement = document.querySelector('.old-name');
+                let oldName;
+                let content;
+                if (oldNameElement) {
+                    content = oldNameElement.textContent.split(' ');
+                    oldName = content.pop();
+                    content = content.join(' ');
+                    content = content.replace(',',' ');
+                }
+                const newName = editProductButton.querySelector('#product-name').value;
+                const description = editProductButton.querySelector('#product-description').value;
+                const price = editProductButton.querySelector('#product-price').value;
+                const productImage = document.querySelectorAll("#product-image")[1].files[0];
+
+                if (productImage) {
+                    const reader = new FileReader();
+
+                    reader.onload = function(event) {
+                        const base64Image = event.target.result;
+                        const gallerySection = document.querySelector(".gallery");
+                        document.querySelector(".edit-product-section").style.display = "none";
+                        while (document.querySelector(".gallery").firstChild) {
+                            document.querySelector(".gallery").removeChild(document.querySelector(".gallery").firstChild);
+                        }
+                        editProduct(oldName, newName, description, price, base64Image).then(() =>{
+                            getProducts().then((allProducts) => {
+                                updateProducts(allProducts);
+                                gallerySection.scrollIntoView({ behavior: 'smooth' });
+                                oldNameElement.textContent = content;
                             }).catch((error) => {
                                 console.error(error);
-                            });
-                        };
-        
-                        reader.readAsDataURL(productImage);
-                    }
-                } catch (err) {
-                    console.error(err);
+                            }); 
+                            setupEventListeners();
+
+                        }).catch((error) => {
+                            console.error(error);
+                        });
+                    };
+
+                    reader.readAsDataURL(productImage);
                 }
-            });
-        }
-        
-    }    
-    else {
-        document.addEventListener();
+            } catch (err) {
+                console.error(err);
+            }
+        });
     }
 
     const getReceipt = document.querySelector(".purchase-button");
@@ -328,7 +327,7 @@ function ready(authentication) {
                     alert("Houve um erro ao carregar os produtos solicitados!\nVerifique os dados inseridos e o filtro selecionado.");
                     console.error(error);
                 }); 
-                addEventListeners();
+                setupEventListeners();
             }
         });
     }
@@ -344,25 +343,72 @@ function ready(authentication) {
             }).catch((error) => {
                 console.error(error);
             }); 
-            addEventListeners();
+            setupEventListeners();
         });
     }
     
     const messageForm = document.querySelector('#contact-form');
     if (messageForm) {
         messageForm.addEventListener('submit', (e) => {
-            e.target.preventDefault();
-            const name = document.querySelector('#contact-name');
-            const email = document.querySelector('#contact-email');
-            const message = document.querySelector('#contact-message');
+            e.preventDefault();
+            const name = document.querySelector('#contact-name').value;
+            const email = document.querySelector('#contact-email').value;
+            const message = document.querySelector('#contact-message').value;
             if (name && email && message) {
                 sendMessage(name, email, message);
             }
         });
     }
+
+    const addToCartButtons = document.getElementsByClassName("add-to-cart-btn");
+    for (let i = 0; i < addToCartButtons.length; i++) {
+        addToCartButtons[i].addEventListener("click", addProductToCart);
+    }
+
+    const removeProductButtons = document.getElementsByClassName("remove-product-button");
+    for (let i = 0; i < removeProductButtons.length; i++) {
+        removeProductButtons[i].addEventListener("click", function(event) {
+            event.target.parentElement.parentElement.remove();
+            updateTotal();
+        });
+    }
+
+    const quantityInputs = document.getElementsByClassName("product-qtd-input");
+    for (let i = 0; i < quantityInputs.length; i++) {
+        quantityInputs[i].addEventListener("change", updateTotal);
+    }
+
+    const editItemButton = document.getElementsByClassName("edit-button");
+    for (let i = 0; i < editItemButton.length; i++) {
+        editItemButton[i].addEventListener("click", function () {
+            const editProductSection = document.querySelector(".edit-product-section");
+            editProductSection.style.display = "block";
+            editProductSection.scrollIntoView({ behavior: 'smooth' }); 
+        });
+    }
+
+    let createUserButton = document.getElementById('createUserButton');
+    if(createUserButton) {
+        createUserButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            firebase.auth()
+                .createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
+                .then(function () {
+                    alert(`Usuário ${emailInput.value} cadastrado com sucesso!`);
+                    sessionStorage.setItem('nameSession', undefined);
+                    resolve(false);
+                })
+                .catch(function (error) {
+                    console.error(error.code);
+                    console.error(error.message);
+                    alert('Falha ao cadastrar!');
+                    sessionStorage.setItem('nameSession', undefined);
+                    resolve(false);
+                });
+        });
+    }
 }
 
-//métodos
 function addProductToCart(event) {
     const button = event.currentTarget;
     const productInfos = button.parentElement.parentElement;
@@ -574,35 +620,6 @@ function addEventListenersToNewElements(newItem) {
         });
     }
     
-}
-
-function addEventListeners() {
-    const addToCartButtons = document.getElementsByClassName("add-to-cart-btn");
-    for (let i = 0; i < addToCartButtons.length; i++) {
-        addToCartButtons[i].addEventListener("click", addProductToCart);
-    }
-
-    const removeProductButtons = document.getElementsByClassName("remove-product-button");
-    for (let i = 0; i < removeProductButtons.length; i++) {
-        removeProductButtons[i].addEventListener("click", function(event) {
-            event.target.parentElement.parentElement.remove();
-            updateTotal();
-        });
-    }
-
-    const quantityInputs = document.getElementsByClassName("product-qtd-input");
-    for (let i = 0; i < quantityInputs.length; i++) {
-        quantityInputs[i].addEventListener("change", updateTotal);
-    }
-
-    const editItemButton = document.getElementsByClassName("edit-button");
-    for (let i = 0; i < quantityInputs.length; i++) {
-        editItemButton[i].addEventListener("click", function () {
-            const editProductSection = document.querySelector(".edit-product-section");
-            editProductSection.style.display = "block";
-            editProductSection.scrollIntoView({ behavior: 'smooth' }); 
-        });
-    }
 }
 
 function finalisePurchase () {
@@ -830,7 +847,6 @@ function loadProduct(productInfo, editForm) {
     editForm.querySelector('#product-price').value = price;
 }
 
-
 function editProduct(oldName, newName, description, price, image) {
     return new Promise((resolve, reject) => {
         if (!newName || !description || !price || !image) {
@@ -887,3 +903,47 @@ function sendMessage (inputEmail, inputMensagem, inputNome) {
         console.log("Erro de envio", error);
     });    
 }
+
+async function gotoMenu() {
+    // Muda a URL sem recarregar a página
+    history.pushState({}, '', 'menu.html');
+
+    // Carrega o conteúdo do menu.html
+    const response = await fetch('menu.html');
+    const menuHtml = await response.text();
+    
+    // Atualiza o conteúdo da página com o conteúdo de menu.html
+    document.querySelector('body').innerHTML = menuHtml;
+}
+
+async function gotoLogin() {
+    // Muda a URL de volta para index.html sem recarregar a página
+    history.pushState({}, '', 'index.html');
+    
+    // Carrega o conteúdo do index.html
+    const response = await fetch('index.html');
+    const indexHtml = await response.text();
+    
+    // Atualiza o conteúdo da página de volta para login
+    document.querySelector('body').innerHTML = indexHtml;
+}
+
+(async function initialize1() {
+    if (location.pathname === '/index.html') {
+        console.log('init1');
+        const response = await fetch('index.html');
+        const menuHtml = await response.text();
+        document.querySelector('body').innerHTML = menuHtml;
+        login();
+    }
+})();
+
+(async function initialize2() {
+    if (location.pathname === '/menu.html') {
+        console.log('init2');
+        const response = await fetch('menu.html');
+        const menuHtml = await response.text();
+        document.querySelector('body').innerHTML = menuHtml;
+        ready();
+    }
+})();

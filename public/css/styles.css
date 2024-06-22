@@ -478,3 +478,7 @@ form {
 button {
   color: #fff;
 }
+
+.p-loading {
+  background-color: var(--secondaryColor);
+}
