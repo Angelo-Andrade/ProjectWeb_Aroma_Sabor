@@ -19,38 +19,40 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase();
 
-// window.addEventListener('load', function() {
-    
-// });
-// document.body.onload = addElement;
+document.addEventListener('contentReplaced', (event) => {
+    console.log('O conteúdo foi substituído!', event.detail);
+    if(event.detail.content === 'index.html') {
+        console.log('carregando js');
+        
+        let authentication = login().then( () => { 
+            if (authentication) {
+                console.log('carregando elementos menu...');
+                gotoMenu();
+                console.log('buscando produtos...');
+                ready(authentication);
+            }
+        });
+    }
+});
 
 document.addEventListener("DOMContentLoaded", async function() {
-    console.log('carregando js');
-
-    window.addEventListener('popstate', async function(event) {
-        console.log('teste');
-        if (location.pathname === '/public/menu.html') {
-            console.log('teste2');
-            gotoMenu();
-            ready();
-        } 
+    let authentication = undefined;
+    
+    window.addEventListener('load', async function () {
+        console.log('carregando js');
         
-        if (location.pathname === '/public/index.html') {
-            console.log('teste3');
-            gotoLogin();
-            login();
+        if (this.location.pathname === '/public/index.html') {
+            authentication = await login();
+
+            if (authentication) {
+                console.log('carregando elementos menu...');
+                gotoMenu();
+                console.log('buscando produtos...');
+                ready(authentication);
+            }
         }
     });
 
-    let authentication = await login();
-    console.log(authentication);
-    
-    if (authentication) {
-        console.log('carregando elementos menu...');
-        gotoMenu();
-        console.log('buscando produtos...');
-        ready(authentication);
-    }
 });
 
 async function login() {
@@ -63,6 +65,7 @@ async function login() {
         let authEmailPassButton = document.getElementById('authEmailPassButton');
         if (authEmailPassButton) {
             authEmailPassButton.addEventListener('click', function (event) {
+                console.log('autenticando');
                 event.preventDefault();
                 displayName.innerText = 'Validando dados...';
                 firebase.auth().signInWithEmailAndPassword(emailInput.value, passwordInput.value)
@@ -131,10 +134,10 @@ async function login() {
 function ready(authentication) {
     getProducts()
     .then((allProducts) => {
-        return updateProducts(allProducts); // Retorna a promessa de updateProducts()
+        return updateProducts(allProducts);
     })
     .then(() => {
-        setupEventListeners(); // Chama setupEventListeners() após updateProducts() ser concluído
+        setupEventListeners();
     })
     .catch((error) => {
         console.error('Erro ao carregar produtos:', error);
@@ -238,14 +241,15 @@ function setupEventListeners() {
                     alert('Você se deslogou');
                     sessionStorage.setItem('nameSession', undefined);
                     gotoLogin();
-                    resolve(false);
-                }, function (error) {
+                })
+                .catch(function (error) {
                     console.error(error);
                     sessionStorage.setItem('nameSession', undefined);
-                    resolve(false);
+                    // Handle any error that occurs during logout
                 });
         });
     }
+
 
     const editProductButton = document.querySelector("#edit-product-form");
     if (editProductButton) {
@@ -905,45 +909,24 @@ function sendMessage (inputEmail, inputMensagem, inputNome) {
 }
 
 async function gotoMenu() {
-    // Muda a URL sem recarregar a página
-    history.pushState({}, '', 'menu.html');
-
     // Carrega o conteúdo do menu.html
     const response = await fetch('menu.html');
     const menuHtml = await response.text();
     
     // Atualiza o conteúdo da página com o conteúdo de menu.html
     document.querySelector('body').innerHTML = menuHtml;
+    
+    const event = new CustomEvent('contentReplaced', { detail: { content: 'menu.html' } });
+    document.dispatchEvent(event);
 }
 
 async function gotoLogin() {
-    // Muda a URL de volta para index.html sem recarregar a página
-    history.pushState({}, '', 'index.html');
-    
-    // Carrega o conteúdo do index.html
     const response = await fetch('index.html');
     const indexHtml = await response.text();
     
-    // Atualiza o conteúdo da página de volta para login
     document.querySelector('body').innerHTML = indexHtml;
+    
+    // Disparar um evento customizado
+    const event = new CustomEvent('contentReplaced', { detail: { content: 'index.html' } });
+    document.dispatchEvent(event);
 }
-
-(async function initialize1() {
-    if (location.pathname === '/index.html') {
-        console.log('init1');
-        const response = await fetch('index.html');
-        const menuHtml = await response.text();
-        document.querySelector('body').innerHTML = menuHtml;
-        login();
-    }
-})();
-
-(async function initialize2() {
-    if (location.pathname === '/menu.html') {
-        console.log('init2');
-        const response = await fetch('menu.html');
-        const menuHtml = await response.text();
-        document.querySelector('body').innerHTML = menuHtml;
-        ready();
-    }
-})();
