@@ -1,4 +1,3 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, get, set, child, push, update, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 // TODO: Add SDKs for Firebase products that you want to use
@@ -19,41 +18,64 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase();
 
+export { app };
+export { db };
+
 document.addEventListener('contentReplaced', (event) => {
     console.log('O conteúdo foi substituído!', event.detail);
+    let authentication = undefined;
     if(event.detail.content === 'index.html') {
-        console.log('carregando js');
-        
-        let authentication = login().then( () => { 
+        authentication = login().then( () => { 
             if (authentication) {
                 console.log('carregando elementos menu...');
-                gotoMenu();
-                console.log('buscando produtos...');
-                ready(authentication);
+                loadPage('menu');
             }
         });
+    }
+    
+    if(event.detail.content === 'menu.html') {
+        console.log('buscando produtos...');
+        ready(authentication);
+    }
+
+    if (event.detail.content === 'service.html') {
+        setupEventsService();        
+    }
+
+    if (event.detail.content === 'newAccount.html') {
+        setupEventsNewAccount();
     }
 });
 
 document.addEventListener("DOMContentLoaded", async function() {
     let authentication = undefined;
+    console.log(true);  
     
     window.addEventListener('load', async function () {
-        console.log('carregando js');
-        
         if (this.location.pathname === '/public/index.html') {
             authentication = await login();
 
             if (authentication) {
                 console.log('carregando elementos menu...');
-                gotoMenu();
-                console.log('buscando produtos...');
-                ready(authentication);
+                loadPage('menu');
             }
         }
     });
 
 });
+
+//métodos:
+const router = new Navigo('/', { hash: true });
+
+async function loadPage(page) {
+    const response = await fetch(`${page}.html`);
+    const html = await response.text();
+    document.querySelector('body').innerHTML = html;
+
+    // Dispara o evento customizado
+    const event = new CustomEvent('contentReplaced', { detail: { content: `${page}.html` } });
+    document.dispatchEvent(event);
+}
 
 async function login() {
     const emailInput = document.getElementById('emailInput');
@@ -87,28 +109,22 @@ async function login() {
         }
 
         // Providers
-        let authGoogleButton = document.getElementById('authGoogleButton');
-        if (authGoogleButton) {
-            authGoogleButton.addEventListener('click', function (event) {
-                event.preventDefault();
-                let provider = new firebase.auth.GoogleAuthProvider();
-                firebase
-                    .auth()
-                    .signInWithPopup(provider)
-                    .then(function (result) {
-                        console.log(result);
-                        let token = result.credential.accessToken;
-                        displayName.innerText = 'Bem vindo, ' + result.user.displayName;
-                        sessionStorage.setItem('nameSession', result.user.displayName);
-                        resolve(true);
-                    }).catch(function (error) {
-                        console.log(error);
-                        alert('Falha na autenticação');
-                        sessionStorage.setItem('nameSession', undefined);
-                        resolve(false);
-                    });
-            });
-        }
+        const authGoogleButton = document.querySelector('#authGoogleButton'); 
+        authGoogleButton.addEventListener('click', function () {
+            let provider = new firebase.auth.GoogleAuthProvider();
+            firebase
+             .auth()
+             .signInWithPopup(provider)
+             .then(function (result) {
+                    console.log(result);
+                    let token = result.credential.accessToken;
+                    displayName.innerText = 'Bem vindo, ' + result.user.displayName;
+                    insertUser(result.user.displayName, result.user.email, 'commonUser');
+                }).catch(function (error) {
+                    console.log(error);
+                    alert('Falha na autenticação');
+                });
+        });
 
         let logOutButton = document.getElementById('logOutButton');
         if(logOutButton) {
@@ -350,19 +366,6 @@ function setupEventListeners() {
             setupEventListeners();
         });
     }
-    
-    const messageForm = document.querySelector('#contact-form');
-    if (messageForm) {
-        messageForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.querySelector('#contact-name').value;
-            const email = document.querySelector('#contact-email').value;
-            const message = document.querySelector('#contact-message').value;
-            if (name && email && message) {
-                sendMessage(name, email, message);
-            }
-        });
-    }
 
     const addToCartButtons = document.getElementsByClassName("add-to-cart-btn");
     for (let i = 0; i < addToCartButtons.length; i++) {
@@ -391,25 +394,20 @@ function setupEventListeners() {
         });
     }
 
-    let createUserButton = document.getElementById('createUserButton');
+    const createUserButton = document.getElementById('createUserButton');
     if(createUserButton) {
         createUserButton.addEventListener('click', function (event) {
-            event.preventDefault();
-            firebase.auth()
-                .createUserWithEmailAndPassword(emailInput.value, passwordInput.value)
-                .then(function () {
-                    alert(`Usuário ${emailInput.value} cadastrado com sucesso!`);
-                    sessionStorage.setItem('nameSession', undefined);
-                    resolve(false);
-                })
-                .catch(function (error) {
-                    console.error(error.code);
-                    console.error(error.message);
-                    alert('Falha ao cadastrar!');
-                    sessionStorage.setItem('nameSession', undefined);
-                    resolve(false);
-                });
+            loadPage('newAccount');
         });
+    }
+
+
+    const serviceButton = document.querySelector('.service-link');
+    if(serviceButton) {
+        serviceButton.addEventListener('click', ()=>{
+            loadPage('service');
+        });
+        
     }
 }
 
@@ -895,30 +893,17 @@ function editProduct(oldName, newName, description, price, image) {
     });
 }
 
-function sendMessage (inputEmail, inputMensagem, inputNome) {
-    const dbref = ref(db);
-    set(child(dbref, 'mensagens'), {
-        email: inputEmail,
-        mensagem: inputMensagem,
-        nome: inputNome
-    }).then(() => {
-        console.log("Mensagem enviada com sucesso");
-    }).catch((error) => {
-        console.log("Erro de envio", error);
-    });    
-}
-
-async function gotoMenu() {
-    // Carrega o conteúdo do menu.html
-    const response = await fetch('menu.html');
-    const menuHtml = await response.text();
+// async function gotoMenu() {
+//     // Carrega o conteúdo do menu.html
+//     const response = await fetch('menu.html');
+//     const menuHtml = await response.text();
     
-    // Atualiza o conteúdo da página com o conteúdo de menu.html
-    document.querySelector('body').innerHTML = menuHtml;
+//     // Atualiza o conteúdo da página com o conteúdo de menu.html
+//     document.querySelector('body').innerHTML = menuHtml;
     
-    const event = new CustomEvent('contentReplaced', { detail: { content: 'menu.html' } });
-    document.dispatchEvent(event);
-}
+//     const event = new CustomEvent('contentReplaced', { detail: { content: 'menu.html' } });
+//     document.dispatchEvent(event);
+// }
 
 async function gotoLogin() {
     const response = await fetch('index.html');
@@ -929,4 +914,132 @@ async function gotoLogin() {
     // Disparar um evento customizado
     const event = new CustomEvent('contentReplaced', { detail: { content: 'index.html' } });
     document.dispatchEvent(event);
+}
+
+async function gotoNewAccount() {
+    const response = await fetch('newAccount.html');
+    const newAccountHtml = await response.text();
+    
+    document.querySelector('body').innerHTML = newAccountHtml;
+    
+    // Disparar um evento customizado
+    const event = new CustomEvent('contentReplaced', { detail: { content: 'newAccount.html' } });
+    document.dispatchEvent(event);
+}
+
+async function gotoService() {
+    const response = await fetch('service.html');
+    const serviceHtml = await response.text();
+    
+    document.querySelector('body').innerHTML = serviceHtml;
+    
+    // Disparar um evento customizado
+    const event = new CustomEvent('contentReplaced', { detail: { content: 'service.html' } });
+    document.dispatchEvent(event);
+}
+
+function createNewUser (emailInput, passwordInput) {
+    firebase.auth()
+    .createUserWithEmailAndPassword(emailInput, passwordInput)
+    .then(function () {
+        alert(`Usuário ${emailInput} cadastrado com sucesso!`);
+    })
+    .catch(function (error) {
+        console.error(error.code);
+        console.error(error.message);
+        alert('Falha ao cadastrar!');
+    });
+}
+
+function sendMessage(inputEmail, inputMensagem, inputNome) {
+    const dbref = ref(db, 'mensagens');
+    
+    // Cria uma nova chave única para a mensagem
+    const newMessageRef = push(dbref);
+
+    // Define os dados da mensagem com a nova chave
+    set(newMessageRef, {
+        email: inputEmail,
+        mensagem: inputMensagem,
+        nome: inputNome
+    }).then(() => {
+        console.log("Mensagem enviada com sucesso");
+    }).catch((error) => {
+        console.log("Erro de envio", error);
+    });
+}
+
+function insertUser (name, email, typeUser) {
+    const dbref = ref(db, 'usuarios');
+    
+    // Cria uma nova chave única para a mensagem
+    const newMessageRef = push(dbref);
+
+    // Define os dados da mensagem com a nova chave
+    set(newMessageRef, {
+        nome: name,
+        email: email,
+        tipo: typeUser
+    }).then(() => {
+        console.log("Mensagem enviada com sucesso");
+    }).catch((error) => {
+        console.log("Erro de envio", error);
+    });
+}
+
+function setupEventsService () {
+    const formService = document.querySelector('#contact-form');
+    if (formService) {
+        formService.addEventListener('submit', (e) => { e.preventDefault(); });
+        
+    }
+    
+    const confirmButton = document.querySelector('#submit-contact-form');
+    if (confirmButton) {
+        confirmButton.addEventListener('click', (e) => {
+            const name = document.querySelector('#contact-name').value;
+            const email = document.querySelector('#contact-email').value;
+            const message = document.querySelector('#contact-message').value;
+            if (name && email && message) {
+                sendMessage(name, email, message);
+                alert('Mesagem enviada, redirecionando para o menu.');
+                loadPage('menu');
+            }
+        });
+    }
+    
+    const cancelButton = document.querySelector('#cancel-contact-form');
+    if(cancelButton) {
+        cancelButton.addEventListener('click', () => {
+            loadPage('menu');
+        });
+    }
+}
+
+function setupEventsNewAccount () {
+    const confirmButton = document.querySelector('#confirmEmailPassButton');
+    if (confirmButton) {
+        confirmButton.addEventListener('click', () => {
+            const name = document.querySelector('#nameInput').value;
+            const email = document.querySelector('#emailInput').value;
+            const password = document.querySelector('#passwordInput').value;
+            let typeUser;
+            if (document.querySelector('#admUser').checked) {
+                typeUser = document.querySelector('#admUser').value;
+            }
+            else {
+                typeUser = document.querySelector('#commonUser').value;
+            }
+            createNewUser(email, password);
+            insertUser(name, email, typeUser);  
+        
+        });
+    }
+
+    const cancelButton = document.querySelector('#cancelButton');
+    if (cancelButton) {
+        cancelButton.addEventListener('click', () => {
+            loadPage('menu');
+        });
+    }
 }
