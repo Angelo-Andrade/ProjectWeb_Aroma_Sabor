@@ -148,48 +148,29 @@ async function login() {
 }
 
 function ready(authentication) {
-    getProducts()
-    .then((allProducts) => {
-        return updateProducts(allProducts);
-    })
-    .then(() => {
-        setupEventListeners();
-    })
-    .catch((error) => {
+    const email = sessionStorage.getItem('nameSession');
+    console.log(email)
+    getUsers(email).then((typeUser) => {
+        getProducts()
+        .then((allProducts) => {
+            return updateProducts(allProducts);
+        })
+        .then(() => {
+            setupEventListeners(typeUser);
+        })
+        .catch((error) => {
+            console.error('Erro ao carregar produtos:', error);
+        }); 
+
+    }).catch((error) => {
         console.error('Erro ao carregar produtos:', error);
-    }); 
+    });
+
 }
 
 //métodos
-function setupEventListeners() {
-    console.log('atribuindo eventos');
-
-    const addItemButton = document.getElementById("add-item");
-    if (addItemButton) {
-        addItemButton.addEventListener("click", () => {
-            const addProductSection = document.querySelector(".add-product-section");
-            addProductSection.style.display = "block";
-            addProductSection.scrollIntoView({ behavior: 'smooth' }); 
-        });
-    }
-
-    const removeItem = document.querySelector(".close-button");
-    if (removeItem) {
-        removeItem.addEventListener("click", (event) => {
-            if(confirm("Realmente deseja apagar o produto?")) {
-                try {
-                    const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
-                    if (productTitle) {
-                        deleteProduct(productTitle);
-                        removeItem.parentElement.parentElement.remove();
-                    }
-                } catch (err) {
-                    alert("Não foi possível apagar o produto!");
-                    console.error(err);
-                }
-            }
-        });
-    }
+function setupEventListeners(typeUser) {
+    console.log('atribuindo eventos', typeUser);
     
     const cancelButtons = document.querySelectorAll("#cancel-product-form");
     cancelButtons.forEach(cancelButton => {
@@ -230,7 +211,7 @@ function setupEventListeners() {
                             gallerySection.appendChild(newItem);
                             document.getElementById("add-product-form").reset();
                             gallerySection.scrollIntoView({ behavior: 'smooth' });
-                            addEventListenersToNewElements(newItem);
+                            addEventListenersToNewElements(newItem, typeUser);
                         } else {
                             console.error('O novo item não pôde ser criado.');
                         }
@@ -385,19 +366,68 @@ function setupEventListeners() {
         quantityInputs[i].addEventListener("change", updateTotal);
     }
 
+    
+    const addItemButton = document.getElementById("add-item");
+    const removeItem = document.querySelector(".close-button");
     const editItemButton = document.getElementsByClassName("edit-button");
-    for (let i = 0; i < editItemButton.length; i++) {
-        editItemButton[i].addEventListener("click", function () {
-            const editProductSection = document.querySelector(".edit-product-section");
-            editProductSection.style.display = "block";
-            editProductSection.scrollIntoView({ behavior: 'smooth' }); 
-        });
-    }
-
     const createUserButton = document.getElementById('createUserButton');
-    if(createUserButton) {
-        createUserButton.addEventListener('click', function (event) {
-            loadPage('newAccount');
+    
+    if (typeUser === 'admUser') {
+        console.log('adm');
+        if(createUserButton) {
+            createUserButton.addEventListener('click', function (event) {
+                loadPage('newAccount');
+            });
+        }
+        
+        for (let i = 0; i < editItemButton.length; i++) {
+            editItemButton[i].addEventListener("click", function () {
+                const editProductSection = document.querySelector(".edit-product-section");
+                editProductSection.style.display = "block";
+                editProductSection.scrollIntoView({ behavior: 'smooth' }); 
+            });
+        }
+
+        if (removeItem) {
+            removeItem.addEventListener("click", (event) => {
+                if(confirm("Realmente deseja apagar o produto?")) {
+                    try {
+                        const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
+                        if (productTitle) {
+                            deleteProduct(productTitle);
+                            removeItem.parentElement.parentElement.remove();
+                        }
+                    } catch (err) {
+                        alert("Não foi possível apagar o produto!");
+                        console.error(err);
+                    }
+                }
+            });
+        }
+        
+        if (addItemButton) {
+            addItemButton.addEventListener("click", () => {
+                const addProductSection = document.querySelector(".add-product-section");
+                addProductSection.style.display = "block";
+                addProductSection.scrollIntoView({ behavior: 'smooth' }); 
+            });
+        }
+    }
+    else if (typeUser === `commonUser`) {
+        createUserButton.addEventListener('click', () => {
+            alert('Apenas usuários administradores tem acesso a esta funcionalidade!');
+        });
+        
+        addItemButton.addEventListener('click', () => {
+            alert('Apenas usuários administradores tem acesso a esta funcionalidade!');
+        });
+        for (let i = 0; i < editItemButton.length; i++) {
+            editItemButton[i].addEventListener('click', () => {
+                alert('Apenas usuários administradores tem acesso a esta funcionalidade!');
+            });
+        }
+        removeItem.addEventListener('click', () => {
+            alert('Apenas usuários administradores tem acesso a esta funcionalidade!');
         });
     }
 
@@ -576,7 +606,7 @@ function deleteProducts() {
 }
 */
 
-function addEventListenersToNewElements(newItem) {
+function addEventListenersToNewElements(newItem, typeUser) {
     const addToCartBtn = newItem.querySelector(".add-to-cart-btn");
     const removeProductBtn = newItem.querySelector(".remove-product-button");
     const editItem = newItem.querySelector(".edit-button");
@@ -584,18 +614,50 @@ function addEventListenersToNewElements(newItem) {
     const removeItem = newItem.querySelector(".close-button");
     const editProductSection = document.querySelector(".edit-product-section");
 
+    if (typeUser === 'admUser') {
+        console.log('adm');
+        if (editItem) {
+            editItem.addEventListener("click", () => {
+                const productInfo = editItem.closest(".product-info");
+                editProductSection.style.display = "block";
+                editProductSection.scrollIntoView({ behavior: 'smooth' });
+                loadProduct(productInfo, editProductSection);
+            });
+        }
+
+        if (removeItem) {
+            removeItem.addEventListener("click", (event) => {
+                if(confirm("Realmente deseja apagar o produto?")){
+                    try {
+                        const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
+                        if (productTitle) {
+                            deleteProduct(productTitle);
+                            removeItem.parentElement.parentElement.remove();
+                        }
+                    } catch (err) {
+                        alert("Não foi possível apagar o produto!");
+                        console.error(err);
+                    }
+                }
+            });
+        }
+    }
+    else if (typeUser === `commonUser`) {
+        console.log('common');        
+        editItem.addEventListener('click', () => {
+                alert('Apenas usuários administradores tem acesso a esta funcionalidade!');
+        });
+        
+        
+        removeItem.addEventListener('click', () => {
+            alert('Apenas usuários administradores tem acesso a esta funcionalidade!');
+        });
+    }
+    
     if (addToCartBtn) {
         addToCartBtn.addEventListener("click", addProductToCart);
     }
 
-    if (editItem) {
-        editItem.addEventListener("click", () => {
-            const productInfo = editItem.closest(".product-info");
-            editProductSection.style.display = "block";
-            editProductSection.scrollIntoView({ behavior: 'smooth' });
-            loadProduct(productInfo, editProductSection);
-        });
-    }
     
     if (removeProductBtn) {
         removeProductBtn.addEventListener("click", removeProducts);
@@ -604,24 +666,6 @@ function addEventListenersToNewElements(newItem) {
     if (productQtdInput) {
         productQtdInput.addEventListener("change", updateTotal);
     }
-
-    if (removeItem) {
-        removeItem.addEventListener("click", (event) => {
-            if(confirm("Realmente deseja apagar o produto?")){
-                try {
-                    const productTitle = event.target.closest('.product-info').querySelector('.product-title').textContent;
-                    if (productTitle) {
-                        deleteProduct(productTitle);
-                        removeItem.parentElement.parentElement.remove();
-                    }
-                } catch (err) {
-                    alert("Não foi possível apagar o produto!");
-                    console.error(err);
-                }
-            }
-        });
-    }
-    
 }
 
 function finalisePurchase () {
@@ -674,6 +718,32 @@ function getProducts() {
                 }
                 // Aqui você pode usar a lista allProducts conforme necessário
                 resolve(allProducts);
+            } else {
+                reject("Produto não cadastrado");
+            }
+        }).catch((error) => {
+            reject("Erro ao obter os dados: " + error);
+        });
+    });
+}
+
+function getUsers(inputEmail) {
+    const dbref = ref(db);
+    return new Promise((resolve, reject) => {
+        get(child(dbref, "usuarios/")).then((snapshot) => {
+            if (snapshot.exists()) {
+                const users = snapshot.val();
+                const allUsers = [];
+                for (const key in users) {
+                    if (users.hasOwnProperty(key)) {
+                        const user = users[key];
+                        if (user.email === inputEmail) {
+                            resolve(user.tipo);
+                        }
+                    }
+                }
+                // Aqui você pode usar a lista allProducts conforme necessário
+                
             } else {
                 reject("Produto não cadastrado");
             }
